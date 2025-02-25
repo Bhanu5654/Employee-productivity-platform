@@ -124,19 +124,30 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    role = request.args.get('role')
+    role = request.args.get('role')  # Get the role from the URL
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         user = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password, password):
-            session['user'] = email
-            session['role'] = user.role  # Store role in session
-            if user.role == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user.role == 'employee':
-                return redirect(url_for('employee_dashboard'))
-        flash("Invalid credentials, please try again", "error")
+
+        if user:
+            if bcrypt.check_password_hash(user.password, password):
+                session['user'] = email
+                session['role'] = user.role  # Store role in session
+
+                # Redirect based on role
+                if user.role == 'admin':
+                    return redirect(url_for('admin_dashboard'))
+                elif user.role == 'employee':
+                    return redirect(url_for('employee_dashboard'))
+            else:
+                flash("Incorrect password. Please try again.", "error")
+        else:
+            flash("Email not found. Please check your email or sign up.", "error")
+
+        # Redirect based on the current role
+        return redirect(url_for('login', role=role))
+
     return render_template('login.html', role=role)
 
 # Signup Route
